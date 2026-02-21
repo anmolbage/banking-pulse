@@ -1,0 +1,11 @@
+{
+  "name": "bankingpulse",
+  "version": "1.0.0",
+  "description": "AI-powered banking news for Indian bankers",
+  "scripts": {
+    "dev": "netlify dev"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0"
+  }
+}

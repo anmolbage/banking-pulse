@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Banking Pulse — Your AI-Powered Banking News Desk</title>
+<meta name="description" content="AI-curated banking & finance news for Indian branch managers. Hindi + English. Circulars, trends, morning briefs — in 2 minutes.">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,300;1,9..40,400&family=JetBrains+Mono:wght@400;500;600&family=Tiro+Devanagari+Hindi&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0d0b09;--bg2:#151210;--surface:#1c1916;--surface2:#242019;
+  --cream:#f6f1eb;--cream2:#efe8df;--warm:#d4c8b8;
+  --copper:#d4793a;--copper-bright:#e8924f;--copper-glow:rgba(212,121,58,0.15);
+  --teal:#3ba99a;--gold:#c9a84c;--red:#d45050;
+  --text:#e8e0d6;--text2:#b0a596;--text3:#7a7064;
+  --line:rgba(232,224,214,0.08);
+}
+html{scroll-behavior:smooth}
+body{font-family:'DM Sans',-apple-system,sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;-webkit-font-smoothing:antialiased}
+
+/* GRAIN */
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;opacity:0.035;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:150px}
+
+/* REVEALS */
+.rv{opacity:0;transform:translateY(40px);transition:opacity 0.9s cubic-bezier(0.16,1,0.3,1),transform 0.9s cubic-bezier(0.16,1,0.3,1)}
+.rv.vis{opacity:1;transform:translateY(0)}
+.rv.d1{transition-delay:.12s}.rv.d2{transition-delay:.24s}.rv.d3{transition-delay:.36s}.rv.d4{transition-delay:.48s}.rv.d5{transition-delay:.6s}
+
+/* ============ TICKER ============ */
+.ticker{
+  position:fixed;top:0;left:0;right:0;z-index:110;background:var(--copper);overflow:hidden;
+  padding:7px 0;white-space:nowrap;height:30px;
+}
+.ticker-track{
+  display:inline-flex;gap:48px;
+  animation:tickerScroll 30s linear infinite;
+}
+@keyframes tickerScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+.ticker-item{
+  font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;
+  color:var(--bg);display:flex;align-items:center;gap:10px;
+}
+.ticker-item .dot{width:4px;height:4px;border-radius:50%;background:var(--bg);opacity:0.4}
+
+/* ============ NAV ============ */
+nav{
+  position:fixed;top:30px;left:0;right:0;z-index:100;
+  padding:16px 32px;display:flex;align-items:center;justify-content:space-between;
+  background:rgba(13,11,9,0);backdrop-filter:blur(0);
+  transition:all 0.5s ease;border-bottom:1px solid transparent;
+}
+nav.scrolled{background:rgba(13,11,9,0.95);backdrop-filter:blur(20px);border-bottom-color:var(--line)}
+.n-brand{display:flex;align-items:center;gap:12px}
+.n-mark{
+  width:36px;height:36px;border-radius:10px;
+  background:linear-gradient(135deg,var(--copper),var(--copper-bright));
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Playfair Display',serif;font-size:19px;font-weight:700;color:#fff;
+  box-shadow:0 2px 12px rgba(212,121,58,0.3);
+}
+.n-name{font-family:'Playfair Display',serif;font-size:19px;font-weight:700;color:var(--cream);letter-spacing:-0.3px}
+.n-links{display:flex;gap:28px;align-items:center}
+.n-link{font-size:13px;color:var(--text2);text-decoration:none;transition:color 0.3s;font-weight:500}
+.n-link:hover{color:var(--copper-bright)}
+.n-cta{
+  padding:10px 22px;border-radius:8px;border:none;
+  background:var(--copper);color:#fff;font-size:13px;font-weight:600;
+  font-family:'DM Sans',sans-serif;cursor:pointer;text-decoration:none;
+  transition:all 0.3s;
+}
+.n-cta:hover{background:var(--copper-bright);transform:translateY(-1px);box-shadow:0 4px 20px rgba(212,121,58,0.4)}
+@media(max-width:768px){.n-links{display:none}}
+
+/* ============ HERO ============ */
+.hero{
+  min-height:100vh;display:grid;grid-template-columns:1fr 1fr;
+  padding:160px 48px 80px;gap:48px;align-items:center;
+  position:relative;overflow:hidden;
+}
+@media(max-width:960px){.hero{grid-template-columns:1fr;padding:140px 24px 60px;text-align:center}}
+.hero-glow{
+  position:absolute;width:600px;height:600px;border-radius:50%;
+  filter:blur(120px);pointer-events:none;opacity:0.5;
+}
+.hero-glow.g1{top:-200px;left:-150px;background:rgba(212,121,58,0.08)}
+.hero-glow.g2{bottom:-200px;right:-150px;background:rgba(59,169,154,0.06)}
+
+.hero-left{position:relative;z-index:2;max-width:600px}
+@media(max-width:960px){.hero-left{max-width:100%}}
+.hero-eyebrow{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:6px 14px;border-radius:6px;
+  background:var(--copper-glow);border:1px solid rgba(212,121,58,0.2);
+  font-size:11px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;
+  color:var(--copper-bright);margin-bottom:28px;
+}
+.hero-eyebrow .live{width:6px;height:6px;border-radius:50%;background:var(--copper-bright);animation:livePulse 2s ease infinite}
+@keyframes livePulse{0%,100%{box-shadow:0 0 0 0 rgba(212,121,58,0.4)}50%{box-shadow:0 0 0 8px rgba(212,121,58,0)}}
+
+.hero h1{
+  font-family:'Playfair Display',serif;
+  font-size:clamp(36px,6.5vw,68px);font-weight:800;
+  line-height:1.05;letter-spacing:-2px;color:var(--cream);
+  margin-bottom:24px;
+}
+.hero h1 .accent{
+  color:var(--copper-bright);font-style:italic;font-weight:500;
+  position:relative;display:inline-block;
+}
+.hero h1 .accent::after{
+  content:'';position:absolute;bottom:4px;left:0;right:0;height:10px;
+  background:rgba(212,121,58,0.15);border-radius:4px;z-index:-1;
+}
+.hero h1 .hindi{
+  font-family:'Tiro Devanagari Hindi',serif;font-weight:400;
+  color:var(--text2);font-size:0.65em;display:block;margin-top:4px;letter-spacing:0;
+}
+.hero-desc{
+  font-size:clamp(15px,2vw,18px);line-height:1.7;color:var(--text2);
+  margin-bottom:36px;max-width:480px;
+}
+@media(max-width:960px){.hero-desc{max-width:100%;margin-left:auto;margin-right:auto}}
+.hero-btns{display:flex;gap:14px;flex-wrap:wrap}
+@media(max-width:960px){.hero-btns{justify-content:center}}
+.btn-p{
+  padding:16px 36px;border-radius:10px;border:none;
+  background:linear-gradient(135deg,var(--copper),#c06a2e);color:#fff;
+  font-size:15px;font-weight:600;font-family:'DM Sans',sans-serif;
+  cursor:pointer;text-decoration:none;transition:all 0.3s;
+  display:inline-flex;align-items:center;gap:8px;
+  box-shadow:0 4px 24px rgba(212,121,58,0.35);
+}
+.btn-p:hover{transform:translateY(-2px);box-shadow:0 8px 36px rgba(212,121,58,0.5)}
+.btn-s{
+  padding:16px 36px;border-radius:10px;
+  border:1.5px solid rgba(232,224,214,0.12);background:transparent;
+  color:var(--text);font-size:15px;font-weight:600;font-family:'DM Sans',sans-serif;
+  cursor:pointer;text-decoration:none;transition:all 0.3s;
+}
+.btn-s:hover{border-color:var(--copper);color:var(--copper-bright);transform:translateY(-2px)}
+
+/* PHONE MOCKUP */
+.hero-right{position:relative;z-index:2;display:flex;justify-content:center}
+@media(max-width:960px){.hero-right{margin-top:20px}}
+.phone{
+  width:270px;height:550px;border-radius:36px;
+  background:linear-gradient(160deg,#2a2520,#1a1714);
+  padding:10px;position:relative;
+  box-shadow:0 40px 80px rgba(0,0,0,0.5),0 0 0 1px rgba(255,255,255,0.04),inset 0 1px 0 rgba(255,255,255,0.04);
+  transform:perspective(1200px) rotateY(-8deg) rotateX(2deg);
+  transition:transform 0.6s cubic-bezier(0.16,1,0.3,1);
+}
+.phone:hover{transform:perspective(1200px) rotateY(-2deg) rotateX(0deg)}
+@media(max-width:960px){.phone{transform:none}.phone:hover{transform:none}}
+.phone-notch{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:80px;height:22px;border-radius:11px;background:#1a1714;z-index:10}
+.phone-scr{
+  width:100%;height:100%;border-radius:28px;
+  background:#f6f1eb;overflow:hidden;
+}
+.ph-inner{padding:34px 12px 12px;height:100%;overflow:hidden}
+.ph-hdr{display:flex;align-items:center;gap:5px;margin-bottom:8px}
+.ph-mark{width:18px;height:18px;border-radius:5px;background:linear-gradient(135deg,var(--copper),#c06a2e);display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:9px;font-weight:700;color:#fff}
+.ph-title{font-family:'Playfair Display',serif;font-size:12px;font-weight:700;color:#1a1612}
+.ph-tabs{display:flex;gap:3px;margin-bottom:8px}
+.ph-tab{padding:2px 7px;border-radius:8px;font-size:7px;font-weight:600;color:#9a8e80;background:transparent}
+.ph-tab.on{background:#1a1612;color:#f6f1eb}
+.ph-brief{
+  background:#faf8f5;border-radius:8px;border:1px solid rgba(0,0,0,0.05);
+  padding:8px;margin-bottom:6px;
+}
+.ph-brief-top{font-size:6.5px;font-weight:700;color:#b8622e;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;display:flex;align-items:center;gap:3px}
+.ph-brief-txt{font-family:'Playfair Display',serif;font-size:8px;line-height:1.55;color:#3d3529;font-style:italic}
+.ph-card{
+  background:#faf8f5;border-radius:8px;border:1px solid rgba(0,0,0,0.05);
+  padding:8px;margin-bottom:5px;position:relative;overflow:hidden;
+}
+.ph-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.ph-card.r::before{background:#b84040}.ph-card.b::before{background:#3568a8}.ph-card.g::before{background:#c9bfb2}
+.ph-meta{display:flex;gap:3px;margin-bottom:3px;align-items:center}
+.ph-badge{font-size:5.5px;font-weight:700;padding:1px 4px;border-radius:2px;color:#fff}
+.ph-imp{font-size:5.5px;font-weight:700;padding:1px 4px;border-radius:2px}
+.ph-imp.mr{background:rgba(184,64,64,0.1);color:#b84040}.ph-imp.gk{background:rgba(53,104,168,0.1);color:#3568a8}
+.ph-card-t{font-family:'Playfair Display',serif;font-size:9.5px;font-weight:600;line-height:1.35;color:#1a1612}
+
+/* Floating labels around phone */
+.float-label{
+  position:absolute;padding:8px 14px;border-radius:10px;
+  background:var(--surface2);border:1px solid var(--line);
+  font-size:11px;font-weight:600;color:var(--text);
+  box-shadow:0 8px 24px rgba(0,0,0,0.3);white-space:nowrap;
+  animation:floatBob 4s ease-in-out infinite;
+}
+.float-label .fl-dot{width:6px;height:6px;border-radius:50%;display:inline-block;margin-right:6px}
+.fl1{top:60px;right:-40px;animation-delay:0s}.fl1 .fl-dot{background:var(--teal)}
+.fl2{bottom:120px;left:-50px;animation-delay:-1.5s}.fl2 .fl-dot{background:var(--copper)}
+.fl3{top:180px;left:-60px;animation-delay:-3s}.fl3 .fl-dot{background:var(--gold)}
+@keyframes floatBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@media(max-width:960px){.float-label{display:none}}
+
+/* ============ MARQUEE STATS ============ */
+.marquee{
+  border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+  padding:20px 0;overflow:hidden;position:relative;
+}
+.marquee-track{display:flex;gap:60px;align-items:center;animation:marqueeScroll 25s linear infinite}
+@keyframes marqueeScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+.mq-stat{display:flex;flex-direction:column;align-items:center;min-width:140px}
+.mq-num{font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:600;color:var(--cream);letter-spacing:-1px}
+.mq-lbl{font-size:11px;color:var(--text3);margin-top:2px}
+.mq-sep{width:1px;height:32px;background:var(--line);flex-shrink:0}
+
+/* ============ FEATURES ============ */
+.feat-section{padding:120px 48px;position:relative}
+@media(max-width:768px){.feat-section{padding:80px 24px}}
+.feat-header{margin-bottom:72px}
+.s-eyebrow{
+  font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;
+  color:var(--copper-bright);margin-bottom:16px;display:flex;align-items:center;gap:10px;
+}
+.s-eyebrow::before{content:'';width:24px;height:1px;background:var(--copper)}
+.s-title{
+  font-family:'Playfair Display',serif;font-size:clamp(28px,5vw,48px);
+  font-weight:700;line-height:1.15;letter-spacing:-1px;color:var(--cream);max-width:640px;
+}
+.s-title .dim{color:var(--text3)}
+
+.feat-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:2px;
+  background:var(--line);border-radius:20px;overflow:hidden;
+}
+@media(max-width:960px){.feat-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:640px){.feat-grid{grid-template-columns:1fr}}
+.feat{
+  background:var(--bg2);padding:36px 28px;
+  transition:all 0.5s cubic-bezier(0.16,1,0.3,1);position:relative;overflow:hidden;
+}
+.feat:hover{background:var(--surface)}
+.feat::after{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:var(--copper);transform:scaleX(0);transform-origin:left;
+  transition:transform 0.5s cubic-bezier(0.16,1,0.3,1);
+}
+.feat:hover::after{transform:scaleX(1)}
+.feat-num{
+  font-family:'JetBrains Mono',monospace;font-size:11px;
+  color:var(--text3);margin-bottom:20px;letter-spacing:1px;
+}
+.feat-ico{font-size:28px;margin-bottom:16px;display:block}
+.feat h3{font-family:'Playfair Display',serif;font-size:20px;font-weight:600;color:var(--cream);margin-bottom:10px;letter-spacing:-0.3px}
+.feat p{font-size:14px;line-height:1.7;color:var(--text2)}
+
+/* ============ HOW SECTION — EDITORIAL STRIP ============ */
+.how{
+  padding:120px 48px;position:relative;
+  border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+}
+@media(max-width:768px){.how{padding:80px 24px}}
+.how-grid{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:64px;
+  border:1px solid var(--line);border-radius:16px;overflow:hidden;
+}
+@media(max-width:960px){.how-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:640px){.how-grid{grid-template-columns:1fr}}
+.how-step{
+  padding:36px 28px;border-right:1px solid var(--line);
+  position:relative;transition:background 0.3s;
+}
+.how-step:last-child{border-right:none}
+@media(max-width:960px){.how-step{border-bottom:1px solid var(--line)}}
+.how-step:hover{background:var(--surface)}
+.how-step-num{
+  font-family:'Playfair Display',serif;font-size:56px;font-weight:800;
+  color:rgba(212,121,58,0.08);line-height:1;margin-bottom:16px;
+  letter-spacing:-3px;
+}
+.how-step h3{font-family:'Playfair Display',serif;font-size:18px;font-weight:600;color:var(--cream);margin-bottom:8px}
+.how-step p{font-size:13px;line-height:1.65;color:var(--text2)}
+
+/* ============ PRICING ============ */
+.pricing{padding:120px 48px;max-width:920px;margin:0 auto}
+@media(max-width:768px){.pricing{padding:80px 24px}}
+
+/* Toggle */
+.price-toggle{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:32px;margin-bottom:40px}
+.price-toggle .tl{font-size:14px;color:var(--text3);font-weight:500;transition:color 0.3s}
+.price-toggle .tl.active{color:var(--cream);font-weight:600}
+.toggle-track{
+  width:48px;height:26px;border-radius:13px;background:var(--surface2);
+  border:1px solid var(--line);cursor:pointer;position:relative;transition:background 0.3s;
+}
+.toggle-track.on{background:var(--copper)}
+.toggle-knob{
+  width:20px;height:20px;border-radius:50%;background:var(--cream);
+  position:absolute;top:2px;left:2px;transition:transform 0.3s cubic-bezier(0.16,1,0.3,1);
+  box-shadow:0 1px 4px rgba(0,0,0,0.3);
+}
+.toggle-track.on .toggle-knob{transform:translateX(22px)}
+.save-badge{
+  font-size:11px;font-weight:700;color:var(--teal);
+  background:rgba(59,169,154,0.1);padding:3px 10px;border-radius:20px;
+  letter-spacing:0.3px;
+}
+
+/* Cards */
+.price-cards{display:grid;grid-template-columns:1fr 1fr;gap:2px;background:var(--line);border-radius:20px;overflow:hidden}
+@media(max-width:640px){.price-cards{grid-template-columns:1fr;gap:2px}}
+.price-card{background:var(--bg2);padding:40px 32px;position:relative;transition:background 0.3s}
+.price-card:hover{background:var(--surface)}
+.price-card.featured{background:var(--surface)}
+.price-card.featured::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--copper),var(--gold),var(--teal))}
+.pc-badge{
+  display:inline-block;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+  padding:4px 12px;border-radius:6px;margin-bottom:20px;
+}
+.pc-badge.free{background:rgba(232,224,214,0.06);color:var(--text3)}
+.pc-badge.pro{background:var(--copper-glow);color:var(--copper-bright)}
+.pc-name{font-family:'Playfair Display',serif;font-size:24px;font-weight:700;color:var(--cream);margin-bottom:4px}
+.pc-price{display:flex;align-items:baseline;gap:6px;margin-bottom:4px}
+.pc-amt{font-family:'Playfair Display',serif;font-size:44px;font-weight:800;color:var(--cream);letter-spacing:-2px}
+.pc-per{font-size:14px;color:var(--text3)}
+.pc-orig{font-size:14px;color:var(--text3);text-decoration:line-through;margin-left:4px}
+.pc-desc{font-size:13px;color:var(--text2);margin-bottom:24px;line-height:1.6;min-height:40px}
+.pc-features{margin-bottom:28px}
+.pf{display:flex;align-items:flex-start;gap:10px;padding:9px 0;font-size:13.5px;color:var(--text);line-height:1.5}
+.pf-icon{width:18px;height:18px;border-radius:5px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.pf-icon.yes{background:var(--teal);color:#fff}
+.pf-icon.no{background:rgba(232,224,214,0.06);color:var(--text3)}
+.pf .dim{color:var(--text3)}
+.pc-cta{
+  width:100%;padding:14px;border-radius:10px;border:none;
+  font-size:15px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;
+  transition:all 0.3s;display:block;text-align:center;text-decoration:none;
+}
+.pc-cta.primary{
+  background:linear-gradient(135deg,var(--copper),#c06a2e);color:#fff;
+  box-shadow:0 4px 24px rgba(212,121,58,0.3);
+}
+.pc-cta.primary:hover{transform:translateY(-2px);box-shadow:0 8px 36px rgba(212,121,58,0.5)}
+.pc-cta.secondary{background:var(--surface2);color:var(--text);border:1px solid var(--line)}
+.pc-cta.secondary:hover{border-color:rgba(232,224,214,0.2);transform:translateY(-2px)}
+
+/* ============ FINAL CTA ============ */
+.final-cta{
+  padding:120px 48px;text-align:center;position:relative;overflow:hidden;
+  border-top:1px solid var(--line);
+}
+@media(max-width:768px){.final-cta{padding:80px 24px}}
+.final-cta .hero-glow{opacity:0.3}
+.final-cta h2{
+  font-family:'Playfair Display',serif;font-size:clamp(28px,5vw,52px);
+  font-weight:800;line-height:1.1;letter-spacing:-1.5px;color:var(--cream);
+  margin-bottom:20px;position:relative;z-index:2;
+}
+.final-cta h2 em{font-style:italic;color:var(--copper-bright);font-weight:500}
+.final-cta p{
+  font-size:17px;line-height:1.7;color:var(--text2);
+  max-width:500px;margin:0 auto 36px;position:relative;z-index:2;
+}
+
+/* ============ FOOTER ============ */
+footer{
+  padding:48px 48px 36px;border-top:1px solid var(--line);
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;
+}
+@media(max-width:768px){footer{padding:32px 24px;flex-direction:column;text-align:center}}
+.f-brand{display:flex;align-items:center;gap:10px}
+.f-brand .n-mark{width:28px;height:28px;border-radius:7px;font-size:14px}
+.f-brand span{font-family:'Playfair Display',serif;font-size:15px;font-weight:700;color:var(--cream)}
+.f-right{font-size:12px;color:var(--text3);line-height:1.7}
+.f-right a{color:var(--text2);text-decoration:none}.f-right a:hover{color:var(--copper-bright)}
+</style>
+</head>
+<body>
+
+<!-- TICKER -->
+<div class="ticker">
+  <div class="ticker-track" id="ticker">
+    <span class="ticker-item"><span class="dot"></span>AI-Powered Banking Intelligence</span>
+    <span class="ticker-item"><span class="dot"></span>12–18 Curated Stories Daily</span>
+    <span class="ticker-item"><span class="dot"></span>Hindi + English</span>
+    <span class="ticker-item"><span class="dot"></span>RBI · NABARD · SEBI · DFS Circulars</span>
+    <span class="ticker-item"><span class="dot"></span>Built for Branch Managers</span>
+    <span class="ticker-item"><span class="dot"></span>₹5/day · No Ads · No Tracking</span>
+    <span class="ticker-item"><span class="dot"></span>Shareable Image Cards</span>
+    <span class="ticker-item"><span class="dot"></span>Morning Brief · Importance Ranking</span>
+    <!-- duplicate for seamless loop -->
+    <span class="ticker-item"><span class="dot"></span>AI-Powered Banking Intelligence</span>
+    <span class="ticker-item"><span class="dot"></span>12–18 Curated Stories Daily</span>
+    <span class="ticker-item"><span class="dot"></span>Hindi + English</span>
+    <span class="ticker-item"><span class="dot"></span>RBI · NABARD · SEBI · DFS Circulars</span>
+    <span class="ticker-item"><span class="dot"></span>Built for Branch Managers</span>
+    <span class="ticker-item"><span class="dot"></span>₹5/day · No Ads · No Tracking</span>
+    <span class="ticker-item"><span class="dot"></span>Shareable Image Cards</span>
+    <span class="ticker-item"><span class="dot"></span>Morning Brief · Importance Ranking</span>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav id="nav">
+  <div class="n-brand"><div class="n-mark">₹</div><span class="n-name">Banking Pulse</span></div>
+  <div class="n-links">
+    <a href="#features" class="n-link">Features</a>
+    <a href="#how" class="n-link">How It Works</a>
+    <a href="#pricing" class="n-link">Pricing</a>
+    <a href="#start" class="n-cta">Get Started →</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-glow g1"></div>
+  <div class="hero-glow g2"></div>
+  <div class="hero-left">
+    <div class="hero-eyebrow rv"><span class="live"></span> AI-Powered · Refreshes Every 6 Hours</div>
+    <h1 class="rv d1">
+      Banking news,<br>explained like a<br><span class="accent">colleague</span>
+      <span class="hindi">बैंकिंग समाचार, सरल भाषा में</span>
+    </h1>
+    <p class="hero-desc rv d2">AI reads 50+ sources and gives you 12–18 stories that actually matter — in the language you think in. Built for the Indian banker who's too busy to scroll, but too smart to be uninformed.</p>
+    <div class="hero-btns rv d3">
+      <a href="#start" class="btn-p">Open Banking Pulse →</a>
+      <a href="#features" class="btn-s">See Features</a>
+    </div>
+  </div>
+  <div class="hero-right rv d2">
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-scr">
+        <div class="ph-inner">
+          <div class="ph-hdr"><div class="ph-mark">₹</div><span class="ph-title">Banking Pulse</span></div>
+          <div class="ph-tabs"><span class="ph-tab on">All</span><span class="ph-tab">Policy</span><span class="ph-tab">Banking</span><span class="ph-tab">⚡ 7</span></div>
+          <div class="ph-brief">
+            <div class="ph-brief-top">☀️ Morning Brief</div>
+            <div class="ph-brief-txt">RBI held steady at 5.25%. The big one: collateral-free limit doubled to ₹20L from April. Keep an eye on UPI fraud framework.</div>
+          </div>
+          <div class="ph-card r">
+            <div class="ph-meta"><span class="ph-badge" style="background:#b84040">LATEST</span><span class="ph-imp mr">Must Read</span></div>
+            <div class="ph-card-t">RBI Holds Repo Rate — Signals Stability Through Q1</div>
+          </div>
+          <div class="ph-card b">
+            <div class="ph-meta"><span class="ph-badge" style="background:#b8622e">ACTION</span><span class="ph-imp gk">Good to Know</span></div>
+            <div class="ph-card-t">MSME Collateral-Free Limit Doubled to ₹20 Lakh</div>
+          </div>
+          <div class="ph-card g" style="opacity:0.5">
+            <div class="ph-meta"><span class="ph-badge" style="background:#3568a8">NEW</span></div>
+            <div class="ph-card-t">UPI Fraud Compensation Framework...</div>
+          </div>
+        </div>
+      </div>
+      <div class="float-label fl1"><span class="fl-dot"></span>Hindi Toggle</div>
+      <div class="float-label fl2"><span class="fl-dot"></span>Save & Share</div>
+      <div class="float-label fl3"><span class="fl-dot"></span>Trend Charts</div>
+    </div>
+  </div>
+</section>
+
+<!-- STATS MARQUEE -->
+<div class="marquee">
+  <div class="marquee-track" id="mq">
+    <div class="mq-stat"><div class="mq-num">12–18</div><div class="mq-lbl">Stories per refresh</div></div><div class="mq-sep"></div>
+    <div class="mq-stat"><div class="mq-num">6</div><div class="mq-lbl">Smart categories</div></div><div class="mq-sep"></div>
+    <div class="mq-stat"><div class="mq-num">2 min</div><div class="mq-lbl">To be fully updated</div></div><div class="mq-sep"></div>
+    <div class="mq-stat"><div class="mq-num">₹3–5</div><div class="mq-lbl">Cost per refresh</div></div><div class="mq-sep"></div>
+    <div class="mq-stat"><div class="mq-num">50+</div><div class="mq-lbl">Sources scanned</div></div><div class="mq-sep"></div>
+    <div class="mq-stat"><div class="mq-num">0</div><div class="mq-lbl">Ads or tracking</div></div><div class="mq-sep"></div>
+    <!-- duplicate -->
+    <div class="mq-stat"><div class="mq-num">12–18</div><div class="mq-lbl">Stories per refresh</div></div><div class="mq-sep"></div>
+    <div class="mq-stat"><div class="mq-num">6</div><div class="mq-lbl">Smart categories</div></div><div class="mq-sep"></div>
+    <div class="mq-stat"><div class="mq-num">2 min</div><div class="mq-lbl">To be fully updated</div></div><div class="mq-sep"></div>
+    <div class="mq-stat"><div class="mq-num">₹3–5</div><div class="mq-lbl">Cost per refresh</div></div><div class="mq-sep"></div>
+    <div class="mq-stat"><div class="mq-num">50+</div><div class="mq-lbl">Sources scanned</div></div><div class="mq-sep"></div>
+    <div class="mq-stat"><div class="mq-num">0</div><div class="mq-lbl">Ads or tracking</div></div><div class="mq-sep"></div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section class="feat-section" id="features">
+  <div class="feat-header">
+    <div class="s-eyebrow rv">Features</div>
+    <h2 class="s-title rv d1">Everything a branch manager needs. <span class="dim">Nothing they don't.</span></h2>
+  </div>
+  <div class="feat-grid">
+    <div class="feat rv">
+      <div class="feat-num">01</div>
+      <div class="feat-ico">☀️</div>
+      <h3>Morning Brief</h3>
+      <p>AI writes a 30-second overview of the week — like a colleague catching you up before the morning meeting.</p>
+    </div>
+    <div class="feat rv d1">
+      <div class="feat-num">02</div>
+      <div class="feat-ico">⚡</div>
+      <h3>Importance Ranking</h3>
+      <p>Every story tagged Must Read, Good to Know, or FYI. Red strip for urgent. Know instantly what needs your attention.</p>
+    </div>
+    <div class="feat rv d2">
+      <div class="feat-num">03</div>
+      <div class="feat-ico">📋</div>
+      <h3>Circular Tracker</h3>
+      <p>RBI, NABARD, DFS circulars with checkbox action items and deadlines. Your compliance never falls through the cracks.</p>
+    </div>
+    <div class="feat rv d3">
+      <div class="feat-num">04</div>
+      <div class="feat-ico">📊</div>
+      <h3>Trend Charts</h3>
+      <p>Repo rate across meetings. Credit growth over quarters. Visual context that makes dry numbers meaningful at a glance.</p>
+    </div>
+    <div class="feat rv d4">
+      <div class="feat-num">05</div>
+      <div class="feat-ico">🇮🇳</div>
+      <h3>Hindi + English</h3>
+      <p>One tap switches everything — briefs, summaries, action items. Natural, everyday Hindi, not textbook Sanskrit.</p>
+    </div>
+    <div class="feat rv d5">
+      <div class="feat-num">06</div>
+      <div class="feat-ico">📤</div>
+      <h3>Share as Image</h3>
+      <p>Every story becomes a branded card. Share to WhatsApp, Telegram, or notice board. Your team stays informed too.</p>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how" id="how">
+  <div class="feat-header">
+    <div class="s-eyebrow rv">How It Works</div>
+    <h2 class="s-title rv d1">Open. Sign in. <span class="dim">That's it.</span></h2>
+  </div>
+  <div class="how-grid">
+    <div class="how-step rv">
+      <div class="how-step-num">01</div>
+      <h3>Open the app</h3>
+      <p>Visit bankingpulse.app on your phone. No download needed — it works like a native app from your browser.</p>
+    </div>
+    <div class="how-step rv d1">
+      <div class="how-step-num">02</div>
+      <h3>Sign in with Google</h3>
+      <p>One tap. No passwords, no forms. Your Google account is all you need. Free tier starts instantly.</p>
+    </div>
+    <div class="how-step rv d2">
+      <div class="how-step-num">03</div>
+      <h3>Add to Home Screen</h3>
+      <p>Tap "Add to Home Screen" — now it launches like an app. Auto-refreshes 4x daily with fresh news.</p>
+    </div>
+    <div class="how-step rv d3">
+      <div class="how-step-num">04</div>
+      <h3>Read, save, share</h3>
+      <p>Morning brief in 30 seconds. Deep dive what matters. Save for later. Share branded cards with your team.</p>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="pricing" id="pricing">
+  <div class="feat-header">
+    <div class="s-eyebrow rv">Pricing</div>
+    <h2 class="s-title rv d1">Start free. <span class="dim">Upgrade when you can't stop reading.</span></h2>
+  </div>
+
+  <div class="price-toggle rv d2">
+    <span class="tl active" id="tl-mo">Monthly</span>
+    <div class="toggle-track" id="billToggle"><div class="toggle-knob"></div></div>
+    <span class="tl" id="tl-yr">Annual</span>
+    <span class="save-badge" id="saveBadge" style="opacity:0;transition:opacity 0.3s">Save 33%</span>
+  </div>
+
+  <div class="price-cards rv d3">
+    <!-- FREE -->
+    <div class="price-card">
+      <div class="pc-badge free">Free Forever</div>
+      <div class="pc-name">Free</div>
+      <div class="pc-price"><span class="pc-amt">₹0</span></div>
+      <p class="pc-desc">Get the daily pulse. Enough to stay aware — not enough to stay ahead.</p>
+      <div class="pc-features">
+        <div class="pf"><div class="pf-icon yes"><svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="2.5"><polyline points="3 8 7 12 13 4"/></svg></div>Morning Brief (daily overview)</div>
+        <div class="pf"><div class="pf-icon yes"><svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="2.5"><polyline points="3 8 7 12 13 4"/></svg></div>Top 5 stories (titles + tags)</div>
+        <div class="pf"><div class="pf-icon yes"><svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="2.5"><polyline points="3 8 7 12 13 4"/></svg></div>1 category filter</div>
+        <div class="pf"><div class="pf-icon yes"><svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="2.5"><polyline points="3 8 7 12 13 4"/></svg></div>Refreshes 1x per day</div>
+        <div class="pf"><div class="pf-icon no"><svg width="8" height="8" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg></div><span class="dim">No story deep-dive</span></div>
+        <div class="pf"><div class="pf-icon no"><svg width="8" height="8" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg></div><span class="dim">No circulars or action items</span></div>
+        <div class="pf"><div class="pf-icon no"><svg width="8" height="8" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg></div><span class="dim">No Hindi, save, share, trends</span></div>
+      </div>
+      <a href="#" class="pc-cta secondary">Start Free →</a>
+    </div>
+
+    <!-- PRO -->
+    <div class="price-card featured">
+      <div class="pc-badge pro">Most Popular</div>
+      <div class="pc-name">Pro</div>
+      <div class="pc-price">
+        <span class="pc-amt" id="proPrice">₹149</span>
+        <span class="pc-per" id="proPer">/ month</span>
+        <span class="pc-orig" id="proOrig" style="display:none"></span>
+      </div>
+      <p class="pc-desc">Full intelligence desk. Every story, every circular, every language — no walls.</p>
+      <div class="pc-features">
+        <div class="pf"><div class="pf-icon yes"><svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="2.5"><polyline points="3 8 7 12 13 4"/></svg></div><strong>Everything in Free, plus:</strong></div>
+        <div class="pf"><div class="pf-icon yes"><svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="2.5"><polyline points="3 8 7 12 13 4"/></svg></div>Full 12–18 stories with deep dive</div>
+        <div class="pf"><div class="pf-icon yes"><svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="2.5"><polyline points="3 8 7 12 13 4"/></svg></div>All 6 categories + circular tracker</div>
+        <div class="pf"><div class="pf-icon yes"><svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="2.5"><polyline points="3 8 7 12 13 4"/></svg></div>Checkbox action items + deadlines</div>
+        <div class="pf"><div class="pf-icon yes"><svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="2.5"><polyline points="3 8 7 12 13 4"/></svg></div>Hindi ↔ English toggle</div>
+        <div class="pf"><div class="pf-icon yes"><svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="2.5"><polyline points="3 8 7 12 13 4"/></svg></div>Save, bookmark, share as image</div>
+        <div class="pf"><div class="pf-icon yes"><svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="2.5"><polyline points="3 8 7 12 13 4"/></svg></div>Trend charts + 4x daily refresh</div>
+      </div>
+      <a href="#" class="pc-cta primary" id="start">Get Pro →</a>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section class="final-cta">
+  <div class="hero-glow g1"></div>
+  <div class="hero-glow g2"></div>
+  <h2 class="rv">Stop scrolling 10 websites.<br><em>Start your morning with clarity.</em></h2>
+  <p class="rv d1">Banking Pulse gives you what matters — in the language you think in. Read less, know more.</p>
+  <a href="#start" class="btn-p rv d2" style="font-size:16px;padding:18px 44px">Start Reading Now →</a>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="f-brand"><div class="n-mark">₹</div><span>Banking Pulse</span></div>
+  <div class="f-right">AI-Powered Banking Digest · <a href="https://bankingpulse.app">bankingpulse.app</a><br>No ads, no tracking · Your data stays on your device</div>
+</footer>
+
+<script>
+// Scroll reveals
+const obs=new IntersectionObserver(e=>{e.forEach(el=>{if(el.isIntersecting){el.target.classList.add('vis');obs.unobserve(el.target)}})},{threshold:0.08,rootMargin:'0px 0px -30px 0px'});
+document.querySelectorAll('.rv').forEach(el=>obs.observe(el));
+
+// Nav scroll
+const nav=document.getElementById('nav');
+let ticking=false;
+window.addEventListener('scroll',()=>{
+  if(!ticking){requestAnimationFrame(()=>{nav.classList.toggle('scrolled',window.scrollY>60);ticking=false});ticking=true}
+},{passive:true});
+
+// Billing toggle
+let isAnnual=false;
+const toggle=document.getElementById('billToggle');
+const tlMo=document.getElementById('tl-mo');
+const tlYr=document.getElementById('tl-yr');
+const saveBadge=document.getElementById('saveBadge');
+const proPrice=document.getElementById('proPrice');
+const proPer=document.getElementById('proPer');
+const proOrig=document.getElementById('proOrig');
+
+toggle?.addEventListener('click',()=>{
+  isAnnual=!isAnnual;
+  toggle.classList.toggle('on',isAnnual);
+  tlMo.classList.toggle('active',!isAnnual);
+  tlYr.classList.toggle('active',isAnnual);
+  saveBadge.style.opacity=isAnnual?'1':'0';
+  if(isAnnual){
+    proPrice.textContent='₹99';
+    proPer.textContent='/ month';
+    proOrig.style.display='inline';
+    proOrig.textContent='₹149';
+  }else{
+    proPrice.textContent='₹149';
+    proPer.textContent='/ month';
+    proOrig.style.display='none';
+  }
+});
+</script>
+</body>
+</html>
