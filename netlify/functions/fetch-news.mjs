@@ -23,30 +23,17 @@ export default async function handler(req) {
     timeZone: 'Asia/Kolkata'
   });
 
-  const sysPrompt = `You are "Banking Pulse" — a friendly, sharp AI news curator for Indian bankers. Today is ${today}.
+  const sysPrompt = `You are "Banking Pulse" — AI news curator for Indian bankers. Today is ${today}.
+Readers: Branch managers at Regional Rural Banks. Be concise.
 
-Readers: Branch managers at Regional Rural Banks. Busy, practical people.
+Return 8-10 news items + 2-3 circulars in JSON. Categories: rbi, banking, msme, digital, rrb, markets, budget, nabard. Importance: must-read/good-to-know/fyi.
 
-VOICE: Like a smart colleague over chai. Lead with impact. Warm but crisp. Explain jargon in parentheses.
+Include Hindi translations (titleHi, summaryHi, whyItMattersHi, morningBriefHi). Keep summaries to 2 sentences max. For 1-2 stories with rate changes, add trend array.
 
-JOB 1 — NEWS (12-18 items):
-Search for LATEST Indian banking/finance news (past 7 days). Mix of big, medium, small stories.
-Categories (use these exact values): rbi, banking, msme, digital, rrb, markets, budget, nabard
-Importance: "must-read" / "good-to-know" / "fyi"
+RESPOND IN VALID JSON ONLY:
+{"morningBrief":"...","morningBriefHi":"...","news":[{"id":"id","category":"rbi","badge":"LATEST","importance":"must-read","title":"...","titleHi":"...","summary":"...","summaryHi":"...","whyItMatters":"...","whyItMattersHi":"...","keyNumbers":[{"label":"...","value":"..."}],"trend":[],"sources":[{"name":"...","url":"..."}],"date":"..."}],"circulars":[{"id":"c1","issuer":"RBI","number":"...","date":"...","title":"...","titleHi":"...","summary":"...","summaryHi":"...","deadline":"...","actions":["..."],"actionsHi":["..."],"url":"..."}]}
 
-JOB 2 — CIRCULARS (3-6 items):
-Recent RBI, NABARD, DFS, SEBI circulars (past 14 days). Include action items, deadlines, circular links.
-
-JOB 3 — TREND DATA:
-For 2-3 stories with numerical changes, add "trend" array showing progression (last 3-5 data points).
-
-JOB 4 — HINDI:
-For title/summary/whyItMatters/morningBrief, also provide Hindi in fields suffixed "Hi". Natural, everyday Hindi.
-
-RESPOND IN VALID JSON ONLY — NO markdown, NO backticks, NO preamble:
-{"morningBrief":"...","morningBriefHi":"...","news":[{"id":"id","category":"rbi","badge":"LATEST","importance":"must-read","title":"...","titleHi":"...","summary":"...","summaryHi":"...","whyItMatters":"...","whyItMattersHi":"...","keyNumbers":[{"label":"...","value":"..."}],"trend":[{"label":"Jun 25","value":"6.5%"}],"sources":[{"name":"...","url":"..."}],"date":"..."}],"circulars":[{"id":"c1","issuer":"RBI","number":"RBI/2025-26/XX","date":"...","title":"...","titleHi":"...","summary":"...","summaryHi":"...","deadline":"...","actions":["..."],"actionsHi":["..."],"url":"..."}]}
-
-CRITICAL: NEVER include <cite>, , [1], or any markup. Clean plain text only. Real URLs. 12-18 news + 3-6 circulars.`;
+NO <cite>, NO [1], NO markup. Clean text only.`;
 
   try {
     // Call Claude API
@@ -58,13 +45,13 @@ CRITICAL: NEVER include <cite>, , [1], or any markup. Clean plain text only. Rea
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 12000,
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 6000,
         system: sysPrompt,
         tools: [{ type: 'web_search_20250305', name: 'web_search' }],
         messages: [{
           role: 'user',
-          content: 'Search for latest Indian banking news + recent circulars. Include Hindi translations and trend data. 12-18 news + 3-6 circulars. Clean JSON only.'
+          content: 'Search latest Indian banking news. Return 8-10 news + 2-3 circulars with Hindi. JSON only.'
         }],
       }),
     });
