@@ -5,6 +5,9 @@
 [functions]
   node_bundler = "esbuild"
 
+  [functions."fetch-news"]
+  timeout = 120
+
 # Headers for API endpoint
 [[headers]]
   for = "/api/*"
