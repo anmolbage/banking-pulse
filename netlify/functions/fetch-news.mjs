@@ -11,7 +11,8 @@ const supabase = createClient(
 
 // This is a Netlify Scheduled Function
 export const config = {
-  schedule: "30 0,6,12,17 * * *"  // UTC: 0:30, 6:30, 12:30, 17:30 = IST: 6am, 12pm, 6pm, 11pm
+  schedule: "30 0,6,12,17 * * *",  // UTC: 0:30, 6:30, 12:30, 17:30 = IST: 6am, 12pm, 6pm, 11pm
+  timeout: 120,  // Allow up to 2 minutes (Claude + web search takes ~60s)
 };
 
 export default async function handler(req) {
