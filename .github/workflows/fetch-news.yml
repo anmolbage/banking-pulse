@@ -2,15 +2,13 @@ name: Fetch Banking News
 
 on:
   schedule:
-    # IST: 6am, 12pm, 6pm, 11pm (UTC: 0:30, 6:30, 12:30, 17:30)
     - cron: '30 0,6,12,17 * * *'
-  workflow_dispatch: # Manual trigger button
+  workflow_dispatch:
 
 jobs:
   fetch-news:
     runs-on: ubuntu-latest
     timeout-minutes: 5
-
     steps:
       - name: Fetch news from Claude and store in Supabase
         env:
@@ -18,7 +16,7 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
         run: |
-          cat << 'SCRIPT' > fetch.mjs
+          node --input-type=module << 'SCRIPT'
           const today = new Date().toLocaleDateString('en-IN', {
             weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
             timeZone: 'Asia/Kolkata'
@@ -26,15 +24,11 @@ jobs:
 
           const sysPrompt = `You are "Banking Pulse" — a friendly AI news curator for Indian bankers. Today is ${today}.
           Readers: Branch managers at Regional Rural Banks. Be concise but warm.
-
           Return 10-15 news items + 3-5 circulars. Categories: rbi, banking, msme, digital, rrb, markets, budget, nabard. Importance: must-read/good-to-know/fyi.
-
-          Include Hindi translations (titleHi, summaryHi, whyItMattersHi, morningBriefHi). Natural Hindi. For 2-3 stories with rate/number changes, add trend array.
-
+          Include Hindi translations (titleHi, summaryHi, whyItMattersHi, morningBriefHi). Natural Hindi. For 2-3 stories with rate changes, add trend array.
           RESPOND IN VALID JSON ONLY:
           {"morningBrief":"...","morningBriefHi":"...","news":[{"id":"id","category":"rbi","badge":"LATEST","importance":"must-read","title":"...","titleHi":"...","summary":"...","summaryHi":"...","whyItMatters":"...","whyItMattersHi":"...","keyNumbers":[{"label":"...","value":"..."}],"trend":[],"sources":[{"name":"...","url":"..."}],"date":"..."}],"circulars":[{"id":"c1","issuer":"RBI","number":"...","date":"...","title":"...","titleHi":"...","summary":"...","summaryHi":"...","deadline":"...","actions":["..."],"actionsHi":["..."],"url":"..."}]}
-
-          NO <cite>, NO [1], NO markup. Clean text only.`;
+          NO cite tags, NO [1], NO markup. Clean text only.`;
 
           console.log('[fetch-news] Calling Claude API...');
 
@@ -52,14 +46,15 @@ jobs:
               tools: [{ type: 'web_search_20250305', name: 'web_search' }],
               messages: [{
                 role: 'user',
-                content: 'Search for latest Indian banking news + recent RBI/NABARD/DFS circulars. Include Hindi translations and trend data. 10-15 news + 3-5 circulars. Clean JSON only.'
+                content: 'Search for latest Indian banking news and recent RBI NABARD DFS circulars. Include Hindi translations and trend data. 10-15 news plus 3-5 circulars. Clean JSON only.'
               }],
             }),
           });
 
           if (!resp.ok) {
             const err = await resp.json().catch(() => ({}));
-            throw new Error(err.error?.message || 'API Error ' + resp.status);
+            console.error('[fetch-news] API Error:', JSON.stringify(err));
+            process.exit(1);
           }
 
           console.log('[fetch-news] Parsing response...');
@@ -70,32 +65,30 @@ jobs:
             if (b.type === 'text') txt += b.text;
           }
 
-          txt = txt.replace(/\`\`\`json\s*/g, '').replace(/\`\`\`\s*/g, '').trim();
+          txt = txt.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
           const match = txt.match(/\{[\s\S]*"news"[\s\S]*\}/);
-          if (!match) throw new Error('Could not parse response');
+          if (!match) {
+            console.error('[fetch-news] Could not parse JSON from response');
+            console.error(txt.substring(0, 500));
+            process.exit(1);
+          }
 
           const parsed = JSON.parse(match[0]);
-          if (!parsed.news || !Array.isArray(parsed.news)) throw new Error('Invalid format');
+          if (!parsed.news || !Array.isArray(parsed.news)) {
+            console.error('[fetch-news] Invalid format - no news array');
+            process.exit(1);
+          }
 
           const clean = (t) => {
             if (!t) return '';
-            return t
-              .replace(/<\/?cite[^>]*>/gi, '')
-              .replace(/<\/?antml:cite[^>]*>/gi, '')
-              .replace(/<[^>]+>/g, '')
-              .replace(/\[\d+(?:,\s*\d+)*\]/g, '')
-              .replace(/\s+/g, ' ')
-              .trim();
+            return t.replace(/<\/?cite[^>]*>/gi, '').replace(/<\/?antml:cite[^>]*>/gi, '').replace(/<[^>]+>/g, '').replace(/\[\d+(?:,\s*\d+)*\]/g, '').replace(/\s+/g, ' ').trim();
           };
 
           parsed.news = parsed.news.map(n => ({
             ...n,
-            title: clean(n.title),
-            titleHi: clean(n.titleHi),
-            summary: clean(n.summary),
-            summaryHi: clean(n.summaryHi),
-            whyItMatters: clean(n.whyItMatters),
-            whyItMattersHi: clean(n.whyItMattersHi),
+            title: clean(n.title), titleHi: clean(n.titleHi),
+            summary: clean(n.summary), summaryHi: clean(n.summaryHi),
+            whyItMatters: clean(n.whyItMatters), whyItMattersHi: clean(n.whyItMattersHi),
             importance: ['must-read','good-to-know','fyi'].includes(n.importance) ? n.importance : 'fyi',
             sources: (n.sources || []).map(s => ({ name: clean(s.name), url: s.url || '' })),
             keyNumbers: (n.keyNumbers || []).map(k => ({ label: clean(k.label), value: clean(k.value) })),
@@ -137,10 +130,9 @@ jobs:
 
           if (!sbResp.ok) {
             const sbErr = await sbResp.text();
-            throw new Error('Supabase error: ' + sbErr);
+            console.error('[fetch-news] Supabase error:', sbErr);
+            process.exit(1);
           }
 
           console.log('[fetch-news] Success: ' + parsed.news.length + ' news, ' + circulars.length + ' circulars');
           SCRIPT
-
-          node --experimental-vm-modules fetch.mjs
