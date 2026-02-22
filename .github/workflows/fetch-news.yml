@@ -1,1 +1,146 @@
+name: Fetch Banking News
 
+on:
+  schedule:
+    # IST: 6am, 12pm, 6pm, 11pm (UTC: 0:30, 6:30, 12:30, 17:30)
+    - cron: '30 0,6,12,17 * * *'
+  workflow_dispatch: # Manual trigger button
+
+jobs:
+  fetch-news:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Fetch news from Claude and store in Supabase
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: |
+          cat << 'SCRIPT' > fetch.mjs
+          const today = new Date().toLocaleDateString('en-IN', {
+            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+            timeZone: 'Asia/Kolkata'
+          });
+
+          const sysPrompt = `You are "Banking Pulse" — a friendly AI news curator for Indian bankers. Today is ${today}.
+          Readers: Branch managers at Regional Rural Banks. Be concise but warm.
+
+          Return 10-15 news items + 3-5 circulars. Categories: rbi, banking, msme, digital, rrb, markets, budget, nabard. Importance: must-read/good-to-know/fyi.
+
+          Include Hindi translations (titleHi, summaryHi, whyItMattersHi, morningBriefHi). Natural Hindi. For 2-3 stories with rate/number changes, add trend array.
+
+          RESPOND IN VALID JSON ONLY:
+          {"morningBrief":"...","morningBriefHi":"...","news":[{"id":"id","category":"rbi","badge":"LATEST","importance":"must-read","title":"...","titleHi":"...","summary":"...","summaryHi":"...","whyItMatters":"...","whyItMattersHi":"...","keyNumbers":[{"label":"...","value":"..."}],"trend":[],"sources":[{"name":"...","url":"..."}],"date":"..."}],"circulars":[{"id":"c1","issuer":"RBI","number":"...","date":"...","title":"...","titleHi":"...","summary":"...","summaryHi":"...","deadline":"...","actions":["..."],"actionsHi":["..."],"url":"..."}]}
+
+          NO <cite>, NO [1], NO markup. Clean text only.`;
+
+          console.log('[fetch-news] Calling Claude API...');
+
+          const resp = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-api-key': process.env.ANTHROPIC_API_KEY,
+              'anthropic-version': '2023-06-01',
+            },
+            body: JSON.stringify({
+              model: 'claude-sonnet-4-20250514',
+              max_tokens: 12000,
+              system: sysPrompt,
+              tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+              messages: [{
+                role: 'user',
+                content: 'Search for latest Indian banking news + recent RBI/NABARD/DFS circulars. Include Hindi translations and trend data. 10-15 news + 3-5 circulars. Clean JSON only.'
+              }],
+            }),
+          });
+
+          if (!resp.ok) {
+            const err = await resp.json().catch(() => ({}));
+            throw new Error(err.error?.message || 'API Error ' + resp.status);
+          }
+
+          console.log('[fetch-news] Parsing response...');
+
+          const data = await resp.json();
+          let txt = '';
+          for (const b of data.content) {
+            if (b.type === 'text') txt += b.text;
+          }
+
+          txt = txt.replace(/\`\`\`json\s*/g, '').replace(/\`\`\`\s*/g, '').trim();
+          const match = txt.match(/\{[\s\S]*"news"[\s\S]*\}/);
+          if (!match) throw new Error('Could not parse response');
+
+          const parsed = JSON.parse(match[0]);
+          if (!parsed.news || !Array.isArray(parsed.news)) throw new Error('Invalid format');
+
+          const clean = (t) => {
+            if (!t) return '';
+            return t
+              .replace(/<\/?cite[^>]*>/gi, '')
+              .replace(/<\/?antml:cite[^>]*>/gi, '')
+              .replace(/<[^>]+>/g, '')
+              .replace(/\[\d+(?:,\s*\d+)*\]/g, '')
+              .replace(/\s+/g, ' ')
+              .trim();
+          };
+
+          parsed.news = parsed.news.map(n => ({
+            ...n,
+            title: clean(n.title),
+            titleHi: clean(n.titleHi),
+            summary: clean(n.summary),
+            summaryHi: clean(n.summaryHi),
+            whyItMatters: clean(n.whyItMatters),
+            whyItMattersHi: clean(n.whyItMattersHi),
+            importance: ['must-read','good-to-know','fyi'].includes(n.importance) ? n.importance : 'fyi',
+            sources: (n.sources || []).map(s => ({ name: clean(s.name), url: s.url || '' })),
+            keyNumbers: (n.keyNumbers || []).map(k => ({ label: clean(k.label), value: clean(k.value) })),
+            trend: (n.trend || []).map(t => ({ label: clean(t.label), value: clean(t.value) })),
+          }));
+
+          const circulars = (parsed.circulars || []).map(c => ({
+            ...c,
+            title: clean(c.title), titleHi: clean(c.titleHi),
+            summary: clean(c.summary), summaryHi: clean(c.summaryHi),
+            actions: (c.actions || []).map(clean),
+            actionsHi: (c.actionsHi || []).map(clean),
+          }));
+
+          const result = {
+            morningBrief: clean(parsed.morningBrief || ''),
+            morningBriefHi: clean(parsed.morningBriefHi || ''),
+            news: parsed.news,
+            circulars,
+            fetchedAt: new Date().toISOString(),
+          };
+
+          console.log('[fetch-news] Storing in Supabase...');
+
+          const sbResp = await fetch(process.env.SUPABASE_URL + '/rest/v1/news_cache', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'apikey': process.env.SUPABASE_SERVICE_KEY,
+              'Authorization': 'Bearer ' + process.env.SUPABASE_SERVICE_KEY,
+              'Prefer': 'resolution=merge-duplicates',
+            },
+            body: JSON.stringify({
+              id: 'latest',
+              data: result,
+              updated_at: new Date().toISOString(),
+            }),
+          });
+
+          if (!sbResp.ok) {
+            const sbErr = await sbResp.text();
+            throw new Error('Supabase error: ' + sbErr);
+          }
+
+          console.log('[fetch-news] Success: ' + parsed.news.length + ' news, ' + circulars.length + ' circulars');
+          SCRIPT
+
+          node --experimental-vm-modules fetch.mjs
